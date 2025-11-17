@@ -90,19 +90,14 @@ jobs:
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
-        with:
-          pattern: '*'
-          merge-multiple: false
 
       - name: Deploy to Development Gateway
         run: |
           set -e
 
-          # Copy artifacts to working directory
-          cp -r ignition-projects build
-          cp -r scripts scripts
-          cp -r config config
-
+          # Artifacts are downloaded into separate directories
+          # Reorganize them
+          mv ignition-projects build
           chmod +x ./scripts/*.sh
 
           # Deploy to dev environment
@@ -126,16 +121,11 @@ jobs:
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
-        with:
-          pattern: '*'
-          merge-multiple: false
 
       - name: Run Database Migration
         run: |
           set -e
 
-          cp -r scripts scripts
-          cp -r config config
           chmod +x ./scripts/*.sh
 
           echo "Running database migrations for staging..."
@@ -147,10 +137,8 @@ jobs:
         run: |
           set -e
 
-          cp -r ignition-projects build
-          cp -r scripts scripts
-          cp -r config config
-
+          # Reorganize artifacts
+          mv ignition-projects build
           chmod +x ./scripts/*.sh
 
           echo "Deploying to Staging environment..."
@@ -173,16 +161,11 @@ jobs:
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
-        with:
-          pattern: '*'
-          merge-multiple: false
 
       - name: Backup Production Gateway
         run: |
           set -e
 
-          cp -r scripts scripts
-          cp -r config config
           chmod +x ./scripts/*.sh
 
           echo "Creating backup of production gateway..."
@@ -196,8 +179,6 @@ jobs:
         run: |
           set -e
 
-          cp -r scripts scripts
-          cp -r config config
           chmod +x ./scripts/*.sh
 
           echo "Running database migrations for production..."
@@ -209,10 +190,8 @@ jobs:
         run: |
           set -e
 
-          cp -r ignition-projects build
-          cp -r scripts scripts
-          cp -r config config
-
+          # Reorganize artifacts
+          mv ignition-projects build
           chmod +x ./scripts/*.sh
 
           echo "Deploying to Production environment..."
@@ -226,8 +205,6 @@ jobs:
         run: |
           set -e
 
-          cp -r scripts scripts
-          cp -r config config
           chmod +x ./scripts/*.sh
 
           echo "Running smoke tests on production..."
