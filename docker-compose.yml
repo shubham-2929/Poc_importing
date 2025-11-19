@@ -240,6 +240,8 @@ services:
       - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      # Initialization script for creating environment databases
+      - ./scripts/postgres-init.sh:/docker-entrypoint-initdb.d/init.sh:ro
       # Secrets management
       - ./secrets/postgres_password.txt:/run/secrets/postgres_password:ro
     healthcheck:

@@ -99,6 +99,12 @@ jobs:
             config/
             migrations/
 
+      - name: Initialize Database
+        run: |
+          set -e
+          echo "Ensuring development database exists..."
+          docker exec ignition-postgres psql -U ignition -d postgres -c "CREATE DATABASE ignition_dev;" 2>/dev/null || echo "Database ignition_dev already exists"
+
       - name: Deploy to Development Gateway
         run: |
           set -e
@@ -129,6 +135,12 @@ jobs:
             scripts/
             config/
             migrations/
+
+      - name: Initialize Database
+        run: |
+          set -e
+          echo "Ensuring staging database exists..."
+          docker exec ignition-postgres psql -U ignition -d postgres -c "CREATE DATABASE ignition_staging;" 2>/dev/null || echo "Database ignition_staging already exists"
 
       - name: Run Database Migration
         run: |
@@ -180,6 +192,12 @@ jobs:
           PROD_GATEWAY_URL: ${{ secrets.PROD_GATEWAY_URL }}
           PROD_GATEWAY_USER: ${{ secrets.PROD_GATEWAY_USER }}
           PROD_GATEWAY_PASS: ${{ secrets.PROD_GATEWAY_PASS }}
+
+      - name: Initialize Database
+        run: |
+          set -e
+          echo "Ensuring production database exists..."
+          docker exec ignition-postgres psql -U ignition -d postgres -c "CREATE DATABASE ignition_prod;" 2>/dev/null || echo "Database ignition_prod already exists"
 
       - name: Run Database Migration
         run: |
