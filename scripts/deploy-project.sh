@@ -46,10 +46,24 @@ fi
 
 # Determine project name and prepare source
 if [ "$IS_ZIP" = true ]; then
-  PROJECT_NAME=$(basename "$PROJECT_SOURCE" .zip)
   TEMP_DIR=$(mktemp -d)
   unzip -q "$PROJECT_SOURCE" -d "$TEMP_DIR"
   SOURCE_DIR="$TEMP_DIR"
+
+  # Strip version from ZIP filename to get project name
+  # This handles patterns like:
+  #   ProjectName-1.0.0-abc123, ProjectName-v1.0.0, ProjectName-abc123 (single dash)
+  #   ProjectName--1.0.0-abc123, ProjectName--v1.0.0 (double dash, legacy)
+  ZIP_BASENAME=$(basename "$PROJECT_SOURCE" .zip)
+
+  # Try to extract project name by removing version suffix
+  # Pattern: remove -v1.0.0-abc123 or -1.0.0-abc123 or -abc123 or --anything
+  PROJECT_NAME=$(echo "$ZIP_BASENAME" | sed -E 's/-+[v]?[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]+)?$//' | sed -E 's/-+[a-f0-9]{7,}$//')
+
+  # If the regex didn't match anything (no version in filename), use the full basename
+  if [ -z "$PROJECT_NAME" ] || [ "$PROJECT_NAME" = "$ZIP_BASENAME" ]; then
+    PROJECT_NAME="$ZIP_BASENAME"
+  fi
 else
   PROJECT_NAME=$(basename "$PROJECT_SOURCE")
   SOURCE_DIR="$PROJECT_SOURCE"
