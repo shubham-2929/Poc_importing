@@ -35,11 +35,11 @@ if [ -n "$DB_URL_FROM_ENV" ]; then
   DB_NAME=$(echo "$DB_URL" | sed -n 's#.*/\([^?]*\).*#\1#p')
 else
   # Fall back to parsing config file
-  DB_HOST=$(grep "host:" "$CONFIG_FILE" | grep -A 5 "database:" | tail -1 | awk '{print $2}')
-  DB_PORT=$(grep "port:" "$CONFIG_FILE" | grep -A 5 "database:" | tail -1 | awk '{print $2}')
-  DB_NAME=$(grep "name:" "$CONFIG_FILE" | grep -A 5 "database:" | tail -1 | awk '{print $2}')
-  DB_USER=$(grep "username:" "$CONFIG_FILE" | grep -A 5 "database:" | tail -1 | awk '{print $2}')
-  DB_PASS=$(grep "password:" "$CONFIG_FILE" | grep -A 5 "database:" | tail -1 | awk '{print $2}')
+  DB_HOST=$(grep -A 5 "^database:" "$CONFIG_FILE" | grep "host:" | head -1 | awk '{print $2}')
+  DB_PORT=$(grep -A 5 "^database:" "$CONFIG_FILE" | grep "port:" | head -1 | awk '{print $2}')
+  DB_NAME=$(grep -A 5 "^database:" "$CONFIG_FILE" | grep "name:" | head -1 | awk '{print $2}')
+  DB_USER=$(grep -A 5 "^database:" "$CONFIG_FILE" | grep "username:" | head -1 | awk '{print $2}')
+  DB_PASS=$(grep -A 5 "^database:" "$CONFIG_FILE" | grep "password:" | head -1 | awk '{print $2}')
 
   # Construct database URL
   DB_URL="postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"
