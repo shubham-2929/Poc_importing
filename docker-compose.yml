@@ -40,6 +40,7 @@ services:
       --
       wrapper.java.initmemory=1024
       -Dignition.allowunsignedmodules=true
+      -Dignition.config.mode=local
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
       interval: 30s
@@ -96,6 +97,7 @@ services:
       --
       wrapper.java.initmemory=1024
       -Dignition.allowunsignedmodules=true
+      -Dignition.config.mode=develop
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
       interval: 30s
@@ -152,6 +154,7 @@ services:
       --
       wrapper.java.initmemory=1024
       -Dignition.allowunsignedmodules=true
+      -Dignition.config.mode=staging
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
       interval: 30s
@@ -208,6 +211,7 @@ services:
       --
       wrapper.java.initmemory=1024
       -Dignition.allowunsignedmodules=true
+      -Dignition.config.mode=production
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
       interval: 30s

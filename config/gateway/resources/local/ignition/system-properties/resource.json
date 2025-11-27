@@ -6,5 +6,11 @@
   "files": [
     "config.json"
   ],
-  "attributes": {}
+  "attributes": {
+    "lastModification": {
+      "actor": "unknown",
+      "timestamp": "2025-11-27T13:55:36Z"
+    },
+    "lastModificationSignature": "2833a84b10ec14a505c916c17e986199564a7d80bb21b10c024e295f06b1fc56"
+  }
 }
