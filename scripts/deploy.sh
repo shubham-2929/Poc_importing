@@ -35,6 +35,7 @@ GATEWAY_USER=$(grep "username:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
 GATEWAY_PASS=$(grep "password:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
 CONTAINER_NAME=$(grep "container_name:" "$CONFIG_FILE" | awk '{print $2}')
 AUTO_BACKUP=$(grep "auto_backup:" "$CONFIG_FILE" | awk '{print $2}')
+API_KEY=$(grep "api_key:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
 
 # Use deploy_root if specified, otherwise use PROJECT_ROOT
 if [ -n "$DEPLOY_ROOT" ]; then
@@ -112,6 +113,19 @@ if [ -d "$CONFIG_SOURCE" ]; then
     "$CONFIG_SOURCE/" "$CONFIG_TARGET/"
 
   echo "✓ Gateway configuration deployed"
+
+  # Trigger config scan to sync file system changes to Ignition
+  echo "  Triggering Ignition config scan..."
+  if [ -n "$API_KEY" ]; then
+    if curl -s -H "X-Ignition-API-Token: $API_KEY" -X POST "${GATEWAY_URL}/data/api/v1/scan/config" > /dev/null 2>&1; then
+      echo "  ✓ Config scan triggered"
+      sleep 2  # Give Ignition time to process
+    else
+      echo "  ⚠ Config scan failed - gateway may need restart to pick up changes"
+    fi
+  else
+    echo "  ⚠ No API key configured, skipping config scan"
+  fi
 else
   echo "⚠ Gateway configuration not found in config/gateway/, skipping..."
 fi
