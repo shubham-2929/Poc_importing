@@ -5,52 +5,39 @@
   "root": {
     "children": [
       {
-        "meta": {
-          "name": "Label"
-        },
-        "position": {
-          "height": 32,
-          "width": 119,
-          "x": 138,
-          "y": 106
-        },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "config": {
-                "expression": "0"
+        "children": [
+          {
+            "meta": {
+              "name": "Label"
+            },
+            "props": {
+              "style": {
+                "classes": "h1",
+                "fontSize": 26
               },
-              "transforms": [
-                {
-                  "code": "\treturn application.productionOrderService.getProductionOrderNumber()",
-                  "type": "script"
-                }
-              ],
-              "type": "expr"
-            }
+              "text": "This is my header"
+            },
+            "type": "ia.display.label"
           }
-        },
-        "type": "ia.display.label"
-      },
-      {
+        ],
         "meta": {
-          "name": "Label_0"
+          "name": "FlexContainer"
         },
         "position": {
-          "height": 32,
-          "width": 119,
-          "x": 138,
-          "y": 149
+          "basis": "75px"
         },
         "props": {
-          "text": 18
+          "justify": "center"
         },
-        "type": "ia.display.label"
+        "type": "ia.container.flex"
       }
     ],
     "meta": {
       "name": "root"
     },
-    "type": "ia.container.coord"
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
   }
 }

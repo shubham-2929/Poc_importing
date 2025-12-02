@@ -68,6 +68,7 @@
     "geolocation": {},
     "locale": "en-BE",
     "offline": {},
+    "theme": "dark",
     "timeZoneId": "Europe/Brussels"
   }
 }
