@@ -15,6 +15,7 @@ services:
       - "9088:8088"  # HTTP port
       - "9043:8043"  # HTTPS port
       - "9060:8060"  # Gateway Network port
+      - "1883:1883"  # Gateway Network port
     volumes:
       # Version-controlled projects - changes here go directly to git
       - ./projects:/usr/local/bin/ignition/data/projects
@@ -39,7 +40,7 @@ services:
       - GATEWAY_ADMIN_USERNAME=admin
       - GATEWAY_ADMIN_PASSWORD_FILE=/run/secrets/gateway_admin_password
       - IGNITION_EDITION=standard
-      - GATEWAY_MODULES_ENABLED=alarm-notification,reporting,opc-ua,perspective,sms-notification,symbol-factory,tag-historian,udp-tcp-drivers,web-developer,com.kyvislabs.apexcharts,com.cirruslink.mqtt.distributor.gateway,com.cirruslink.mqtt.engine.gateway,com.cirruslink.mqtt.transmission.gateway
+      - GATEWAY_MODULES_ENABLED=com.inductiveautomation.eventstream, alarm-notification,reporting,opc-ua,perspective,sms-notification,symbol-factory,tag-historian,udp-tcp-drivers,web-developer,com.kyvislabs.apexcharts,com.cirruslink.mqtt.distributor.gateway,com.cirruslink.mqtt.engine.gateway,com.cirruslink.mqtt.transmission.gateway
       - IGNITION_UID=1000
       - IGNITION_GID=1000
       - TZ=Europe/Brussels

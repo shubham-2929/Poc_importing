@@ -1,6 +1,6 @@
 {
   "com.cirruslink.mqtt.distributor.gateway": {
-    "filename": "/usr/local/bin/ignition/user-lib/modules/MQTT-Distributor-signed.modl",
+    "filename": "/usr/local/bin/ignition/data/var/ignition/modl/MQTT-Distributor-signed (1).modl",
     "onStartup": "enabled",
     "certFingerprint": "b3d50508d45e1703dea19b80f6cdc3d7030c1f03",
     "licenseAgreementHash": 2517188037
@@ -32,7 +32,8 @@
   },
   "com.inductiveautomation.eventstream": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/EventStream-module.modl",
-    "onStartup": "disabled"
+    "onStartup": "enabled",
+    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
   },
   "com.inductiveautomation.historian": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Historian-module.modl",
@@ -54,7 +55,7 @@
   },
   "com.inductiveautomation.jdbc.postgresql": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/PostgreSQL JDBC Driver Module.modl",
-    "onStartup": "enabled",
+    "onStartup": "disabled",
     "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
   },
   "com.inductiveautomation.opcua": {

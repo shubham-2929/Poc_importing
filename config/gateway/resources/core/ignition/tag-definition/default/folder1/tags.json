@@ -10,7 +10,7 @@
     "dataType": "String",
     "name": "New Tag",
     "defaultValue": "Test123",
-    "value": "Test123",
+    "value": "Test1234",
     "tagType": "AtomicTag"
   }
 ]

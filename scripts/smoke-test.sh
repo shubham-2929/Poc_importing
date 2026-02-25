@@ -61,6 +61,9 @@ fi
 if [ -z "$API_KEY" ]; then
   API_KEY="$API_KEY_FROM_CONFIG"
 fi
+if [ -z "$API_KEY" ] && [ -f "$PROJECT_ROOT/secrets/gateway_api_key" ]; then
+  API_KEY=$(tr -d '\r\n' < "$PROJECT_ROOT/secrets/gateway_api_key")
+fi
 
 echo "=========================================="
 echo "Smoke Test - $ENVIRONMENT"
