@@ -8,15 +8,39 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-ENVIRONMENT=$1
+ENVIRONMENT_INPUT=$1
 COMMAND=${2:-up}
 
-if [ -z "$ENVIRONMENT" ]; then
+if [ -z "$ENVIRONMENT_INPUT" ]; then
   echo "Error: Environment not specified"
   echo "Usage: ./scripts/db-migrate.sh <environment> <command>"
   echo "Commands: up, down, goto <version>, version"
   exit 1
 fi
+
+case "$ENVIRONMENT_INPUT" in
+  dev|development)
+    ENVIRONMENT="dev"
+    ENV_VAR_PREFIX="DEV"
+    ;;
+  staging)
+    ENVIRONMENT="staging"
+    ENV_VAR_PREFIX="STAGING"
+    ;;
+  prod|production)
+    ENVIRONMENT="prod"
+    ENV_VAR_PREFIX="PROD"
+    ;;
+  local)
+    ENVIRONMENT="local"
+    ENV_VAR_PREFIX="LOCAL"
+    ;;
+  *)
+    echo "Error: Unknown environment: $ENVIRONMENT_INPUT"
+    echo "Available environments: local, dev, staging, prod"
+    exit 1
+    ;;
+esac
 
 CONFIG_FILE="$PROJECT_ROOT/config/environments/${ENVIRONMENT}.yaml"
 
@@ -26,7 +50,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 # Check for environment-specific DB_URL variable (CI/CD)
-ENV_VAR_NAME="$(echo ${ENVIRONMENT} | tr '[:lower:]' '[:upper:]')_DB_URL"  # Convert to uppercase
+ENV_VAR_NAME="${ENV_VAR_PREFIX}_DB_URL"
 DB_URL_FROM_ENV="$(eval echo \$${ENV_VAR_NAME})"
 
 if [ -n "$DB_URL_FROM_ENV" ]; then
@@ -40,6 +64,16 @@ else
   DB_NAME=$(grep -A 5 "^database:" "$CONFIG_FILE" | grep "name:" | head -1 | awk '{print $2}')
   DB_USER=$(grep -A 5 "^database:" "$CONFIG_FILE" | grep "username:" | head -1 | awk '{print $2}')
   DB_PASS=$(grep -A 5 "^database:" "$CONFIG_FILE" | grep "password:" | head -1 | awk '{print $2}')
+
+  if [ -z "$DB_PASS" ] && [ -f "$PROJECT_ROOT/secrets/postgres_password.txt" ]; then
+    DB_PASS=$(tr -d '\r\n' < "$PROJECT_ROOT/secrets/postgres_password.txt")
+  fi
+
+  if [ -z "$DB_PASS" ]; then
+    echo "Error: Database password not found in config or secrets/postgres_password.txt"
+    echo "Set ${ENV_VAR_NAME} or provide secrets/postgres_password.txt"
+    exit 1
+  fi
 
   # Construct database URL
   DB_URL="postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"

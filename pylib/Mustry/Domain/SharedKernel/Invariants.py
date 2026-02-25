@@ -6,6 +6,12 @@
 # ---------------------------------------------------------------------
 
 
+if 'basestring' in globals():
+    string_types = (globals()['basestring'],)
+else:
+    string_types = (str,)
+
+
 class CannotBeNone(object):
     """Decorator that raises ValueError if property value is None."""
 
@@ -37,7 +43,7 @@ class CannotBeNoneOrWhitespace(object):
                 self.__name__
             ))
 
-        if isinstance(value, (str, unicode)) and value.strip() == "":
+        if isinstance(value, string_types) and value.strip() == "":
             raise ValueError("'{}.{}' cannot consist of only whitespace.".format(
                 obj.__class__.__name__,
                 self.__name__

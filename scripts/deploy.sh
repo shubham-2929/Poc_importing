@@ -7,14 +7,38 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-ENVIRONMENT=$1
+ENVIRONMENT_INPUT=$1
 
-if [ -z "$ENVIRONMENT" ]; then
+if [ -z "$ENVIRONMENT_INPUT" ]; then
   echo "Error: Environment not specified"
   echo "Usage: ./scripts/deploy.sh <environment>"
-  echo "Available environments: dev, staging, prod"
+  echo "Available environments: local, dev, staging, prod"
   exit 1
 fi
+
+case "$ENVIRONMENT_INPUT" in
+  local)
+    ENVIRONMENT="local"
+    ENV_VAR_PREFIX="LOCAL"
+    ;;
+  dev|development)
+    ENVIRONMENT="dev"
+    ENV_VAR_PREFIX="DEV"
+    ;;
+  staging)
+    ENVIRONMENT="staging"
+    ENV_VAR_PREFIX="STAGING"
+    ;;
+  prod|production)
+    ENVIRONMENT="prod"
+    ENV_VAR_PREFIX="PROD"
+    ;;
+  *)
+    echo "Error: Unknown environment: $ENVIRONMENT_INPUT"
+    echo "Available environments: local, dev, staging, prod"
+    exit 1
+    ;;
+esac
 
 CONFIG_FILE="$PROJECT_ROOT/config/environments/${ENVIRONMENT}.yaml"
 
@@ -30,12 +54,35 @@ echo ""
 
 # Parse YAML config (basic parsing - in production, use yq or similar)
 DEPLOY_ROOT=$(grep "^deploy_root:" "$CONFIG_FILE" | awk '{print $2}')
-GATEWAY_URL=$(grep "url:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
-GATEWAY_USER=$(grep "username:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
-GATEWAY_PASS=$(grep "password:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
+GATEWAY_URL_FROM_CONFIG=$(grep "url:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
+GATEWAY_USER_FROM_CONFIG=$(grep "username:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
+GATEWAY_PASS_FROM_CONFIG=$(grep "password:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
 CONTAINER_NAME=$(grep "container_name:" "$CONFIG_FILE" | awk '{print $2}')
-AUTO_BACKUP=$(grep "auto_backup:" "$CONFIG_FILE" | awk '{print $2}')
-API_KEY=$(grep "api_key:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
+AUTO_BACKUP=$(grep "auto_backup:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
+API_KEY_FROM_CONFIG=$(grep "api_key:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
+
+GATEWAY_URL_ENV_VAR="${ENV_VAR_PREFIX}_GATEWAY_URL"
+GATEWAY_USER_ENV_VAR="${ENV_VAR_PREFIX}_GATEWAY_USER"
+GATEWAY_PASS_ENV_VAR="${ENV_VAR_PREFIX}_GATEWAY_PASS"
+GATEWAY_API_KEY_ENV_VAR="${ENV_VAR_PREFIX}_GATEWAY_API_KEY"
+
+GATEWAY_URL="$(eval echo \$${GATEWAY_URL_ENV_VAR})"
+GATEWAY_USER="$(eval echo \$${GATEWAY_USER_ENV_VAR})"
+GATEWAY_PASS="$(eval echo \$${GATEWAY_PASS_ENV_VAR})"
+API_KEY="$(eval echo \$${GATEWAY_API_KEY_ENV_VAR})"
+
+if [ -z "$GATEWAY_URL" ]; then
+  GATEWAY_URL="$GATEWAY_URL_FROM_CONFIG"
+fi
+if [ -z "$GATEWAY_USER" ]; then
+  GATEWAY_USER="$GATEWAY_USER_FROM_CONFIG"
+fi
+if [ -z "$GATEWAY_PASS" ]; then
+  GATEWAY_PASS="$GATEWAY_PASS_FROM_CONFIG"
+fi
+if [ -z "$API_KEY" ]; then
+  API_KEY="$API_KEY_FROM_CONFIG"
+fi
 
 # Use deploy_root if specified, otherwise use PROJECT_ROOT
 if [ -n "$DEPLOY_ROOT" ]; then
@@ -48,6 +95,9 @@ fi
 
 echo "Gateway URL: $GATEWAY_URL"
 echo "Container: $CONTAINER_NAME"
+if [ -z "$API_KEY" ]; then
+  echo "API key: not set (resource scans may be skipped)"
+fi
 echo ""
 
 # Step 1: Check if gateway is running

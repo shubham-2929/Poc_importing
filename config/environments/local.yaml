@@ -5,8 +5,6 @@ deploy_root: /Users/jasperlouage/_docker/ignition-83-cicd-mustry
 gateway:
   url: http://localhost:9088
   username: admin
-  password: Test123!
-  api_key: cicd:sMwrq8GV0e16T6yzpY9_5iejY6wO_6ddHY__RKb-ksM
   container_name: ignition-local
   backup_path: ./backups/local
 database:
@@ -14,7 +12,6 @@ database:
   port: 5432
   name: ignition_local
   username: ignition
-  password: ignition-db-password
 projects:
   # List of projects to deploy (will be populated by CI/CD)
   # Format: project-name: path/to/project.zip

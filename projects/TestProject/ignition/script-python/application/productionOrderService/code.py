@@ -1,6 +1,6 @@
 
 def getProductionOrderNumber():
-	test = 'PO-12345'
+	test = 'PO-CICD-20260225'
 	return test
 	
 	
