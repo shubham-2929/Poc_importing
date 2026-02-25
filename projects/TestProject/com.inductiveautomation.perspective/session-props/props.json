@@ -62,5 +62,12 @@
       "persistent": false
     }
   },
-  "props": {}
+  "props": {
+    "address": "192.168.117.1",
+    "device": {},
+    "geolocation": {},
+    "locale": "en-GB",
+    "offline": {},
+    "timeZoneId": "Europe/Brussels"
+  }
 }

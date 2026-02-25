@@ -52,21 +52,22 @@ This guide will walk you through setting up the complete CI/CD pipeline in GitHu
    |------------|-------|-------|
    | `DEV_GATEWAY_URL` | `http://localhost:8088` | Development gateway URL |
    | `DEV_GATEWAY_USER` | `admin` | Development admin username |
-   | `DEV_GATEWAY_PASS` | `dev-password` | Development admin password |
+   | `DEV_GATEWAY_PASS` | `Test123!` | Development admin password |
    | `DEV_GATEWAY_API_KEY` | `cicd:...` | Development API token |
    | `DEV_DB_URL` | `postgresql://ignition:ignition-db-password@localhost:5432/ignition_dev?sslmode=disable` | Development database URL |
    | `STAGING_GATEWAY_URL` | `http://localhost:8188` | Staging gateway URL |
    | `STAGING_GATEWAY_USER` | `admin` | Staging admin username |
-   | `STAGING_GATEWAY_PASS` | `staging-password` | Staging admin password |
+   | `STAGING_GATEWAY_PASS` | `Test123!` | Staging admin password |
    | `STAGING_GATEWAY_API_KEY` | `cicd:...` | Staging API token |
    | `STAGING_DB_URL` | `postgresql://ignition:ignition-db-password@localhost:5432/ignition_staging?sslmode=disable` | Staging database URL |
    | `PROD_GATEWAY_URL` | `http://localhost:8288` | Production gateway URL |
    | `PROD_GATEWAY_USER` | `admin` | Production admin username |
-   | `PROD_GATEWAY_PASS` | `prod-password` | Production admin password |
+   | `PROD_GATEWAY_PASS` | `Test123!` | Production admin password |
    | `PROD_GATEWAY_API_KEY` | `cicd:...` | Production API token |
    | `PROD_DB_URL` | `postgresql://ignition:ignition-db-password@localhost:5432/ignition_prod?sslmode=disable` | Production database URL |
 
    **Important**: All these values are automatically marked as secrets and will be masked in logs!
+   Local-only files under `secrets/` are acceptable for Docker bootstrap on your machine, but CI/CD must use GitHub Secrets.
 
 3. **Save Secrets**
    - Click "Add secret" for each one

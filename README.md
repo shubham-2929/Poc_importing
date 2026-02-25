@@ -61,9 +61,9 @@ docker-compose up -d
 ```
 
 This starts three Ignition gateways:
-- **Dev**: http://localhost:8088 (admin/dev-password)
-- **Staging**: http://localhost:8188 (admin/staging-password)
-- **Production**: http://localhost:8288 (admin/prod-password)
+- **Dev**: http://localhost:8088 (admin/Test123!)
+- **Staging**: http://localhost:8188 (admin/Test123!)
+- **Production**: http://localhost:8288 (admin/Test123!)
 
 Plus a PostgreSQL database on port 5432.
 
@@ -181,21 +181,21 @@ Configure these in Settings → Secrets and variables → Actions:
 #### Development Environment
 - `DEV_GATEWAY_URL`: http://localhost:8088
 - `DEV_GATEWAY_USER`: admin
-- `DEV_GATEWAY_PASS`: dev-password
+- `DEV_GATEWAY_PASS`: Test123!
 - `DEV_GATEWAY_API_KEY`: API token with config/project scan access
 - `DEV_DB_URL`: postgres://ignition:<password>@localhost:5432/ignition_dev?sslmode=disable
 
 #### Staging Environment
 - `STAGING_GATEWAY_URL`: http://localhost:8188
 - `STAGING_GATEWAY_USER`: admin
-- `STAGING_GATEWAY_PASS`: staging-password
+- `STAGING_GATEWAY_PASS`: Test123!
 - `STAGING_GATEWAY_API_KEY`: API token with config/project scan access
 - `STAGING_DB_URL`: postgres://ignition:ignition-db-password@localhost:5432/ignition_staging?sslmode=disable
 
 #### Production Environment
 - `PROD_GATEWAY_URL`: http://localhost:8288
 - `PROD_GATEWAY_USER`: admin
-- `PROD_GATEWAY_PASS`: prod-password
+- `PROD_GATEWAY_PASS`: Test123!
 - `PROD_GATEWAY_API_KEY`: API token with config/project scan access
 - `PROD_DB_URL`: postgres://ignition:ignition-db-password@localhost:5432/ignition_prod?sslmode=disable
 
@@ -205,6 +205,9 @@ Configure these in Settings → Secrets and variables → Actions:
 
 - Do not commit passwords or API keys in `config/environments/*.yaml`.
 - Copy `.env.example` to `.env.local` and set local values.
+- Optional local fallback: put only the API token in `secrets/gateway_api_key` (used when `*_GATEWAY_API_KEY` is not set).
+- `secrets/` is local-only and gitignored (`.gitignore`), so this is acceptable for local Docker development.
+- In CI/CD, always use GitHub Environment Secrets (or an external secrets manager), not files in the repo.
 - Load variables before running scripts locally:
 
 ```bash
