@@ -8,14 +8,38 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-ENVIRONMENT=$1
+ENVIRONMENT_INPUT=$1
 PROJECT_SOURCE=$2
 
-if [ -z "$ENVIRONMENT" ] || [ -z "$PROJECT_SOURCE" ]; then
+if [ -z "$ENVIRONMENT_INPUT" ] || [ -z "$PROJECT_SOURCE" ]; then
   echo "Error: Missing required arguments"
   echo "Usage: ./scripts/deploy-project.sh <environment> <project_zip_file|project_directory>"
   exit 1
 fi
+
+case "$ENVIRONMENT_INPUT" in
+  local)
+    ENVIRONMENT="local"
+    ENV_VAR_PREFIX="LOCAL"
+    ;;
+  dev|development)
+    ENVIRONMENT="dev"
+    ENV_VAR_PREFIX="DEV"
+    ;;
+  staging)
+    ENVIRONMENT="staging"
+    ENV_VAR_PREFIX="STAGING"
+    ;;
+  prod|production)
+    ENVIRONMENT="prod"
+    ENV_VAR_PREFIX="PROD"
+    ;;
+  *)
+    echo "Error: Unknown environment: $ENVIRONMENT_INPUT"
+    echo "Available environments: local, dev, staging, prod"
+    exit 1
+    ;;
+esac
 
 # Check if source is zip file or directory
 IS_ZIP=false
@@ -34,14 +58,50 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 # Parse configuration
+DEPLOY_ROOT=$(grep "^deploy_root:" "$CONFIG_FILE" | awk '{print $2}')
 CONTAINER_NAME=$(grep "container_name:" "$CONFIG_FILE" | awk '{print $2}')
+GATEWAY_URL_FROM_CONFIG=$(grep "url:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
+API_KEY_FROM_CONFIG=$(grep "api_key:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
+
+GATEWAY_URL_ENV_VAR="${ENV_VAR_PREFIX}_GATEWAY_URL"
+GATEWAY_API_KEY_ENV_VAR="${ENV_VAR_PREFIX}_GATEWAY_API_KEY"
+GATEWAY_URL="$(eval echo \$${GATEWAY_URL_ENV_VAR})"
+API_KEY="$(eval echo \$${GATEWAY_API_KEY_ENV_VAR})"
+
+if [ -z "$GATEWAY_URL" ]; then
+  GATEWAY_URL="$GATEWAY_URL_FROM_CONFIG"
+fi
+if [ -z "$API_KEY" ]; then
+  API_KEY="$API_KEY_FROM_CONFIG"
+fi
+
+# Use deploy_root if specified, otherwise use PROJECT_ROOT
+if [ -n "$DEPLOY_ROOT" ]; then
+  DEPLOY_TARGET="$DEPLOY_ROOT"
+else
+  DEPLOY_TARGET="$PROJECT_ROOT"
+fi
 
 # Determine project name and prepare source
 if [ "$IS_ZIP" = true ]; then
-  PROJECT_NAME=$(basename "$PROJECT_SOURCE" .zip)
   TEMP_DIR=$(mktemp -d)
   unzip -q "$PROJECT_SOURCE" -d "$TEMP_DIR"
   SOURCE_DIR="$TEMP_DIR"
+
+  # Strip version from ZIP filename to get project name
+  # This handles patterns like:
+  #   ProjectName-1.0.0-abc123, ProjectName-v1.0.0, ProjectName-abc123 (single dash)
+  #   ProjectName--1.0.0-abc123, ProjectName--v1.0.0 (double dash, legacy)
+  ZIP_BASENAME=$(basename "$PROJECT_SOURCE" .zip)
+
+  # Try to extract project name by removing version suffix
+  # Pattern: remove -v1.0.0-abc123 or -1.0.0-abc123 or -abc123 or --anything
+  PROJECT_NAME=$(echo "$ZIP_BASENAME" | sed -E 's/-+[v]?[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]+)?$//' | sed -E 's/-+[a-f0-9]{7,}$//')
+
+  # If the regex didn't match anything (no version in filename), use the full basename
+  if [ -z "$PROJECT_NAME" ] || [ "$PROJECT_NAME" = "$ZIP_BASENAME" ]; then
+    PROJECT_NAME="$ZIP_BASENAME"
+  fi
 else
   PROJECT_NAME=$(basename "$PROJECT_SOURCE")
   SOURCE_DIR="$PROJECT_SOURCE"
@@ -52,25 +112,26 @@ echo "Deploying Project: $PROJECT_NAME"
 echo "Environment: $ENVIRONMENT"
 echo "=========================================="
 
-# Map environment to service directory
+# Map environment to deployment directory
 case "$ENVIRONMENT" in
+  local)
+    # Local mounts ./projects/ directly - deploy to source
+    DEPLOY_DIR="$DEPLOY_TARGET/projects/$PROJECT_NAME"
+    ;;
   dev|development)
-    ENV_DIR="ignition-dev"
+    DEPLOY_DIR="$DEPLOY_TARGET/services/ignition-dev/projects/$PROJECT_NAME"
     ;;
   staging)
-    ENV_DIR="ignition-staging"
+    DEPLOY_DIR="$DEPLOY_TARGET/services/ignition-staging/projects/$PROJECT_NAME"
     ;;
   prod|production)
-    ENV_DIR="ignition-prod"
+    DEPLOY_DIR="$DEPLOY_TARGET/services/ignition-prod/projects/$PROJECT_NAME"
     ;;
   *)
     echo "Error: Unknown environment: $ENVIRONMENT"
     exit 1
     ;;
 esac
-
-# Deploy to mounted directory (curated approach)
-DEPLOY_DIR="$PROJECT_ROOT/services/$ENV_DIR/projects/$PROJECT_NAME"
 
 echo "Deploying to: $DEPLOY_DIR"
 
@@ -92,26 +153,79 @@ if [ "$IS_ZIP" = true ]; then
   rm -rf "$TEMP_DIR"
 fi
 
-# Restart container to reload project
-echo "Restarting gateway to load project..."
-docker restart "$CONTAINER_NAME" > /dev/null
+# Function to wait for gateway to be ready
+wait_for_gateway() {
+  local max_attempts=3
+  local attempt=1
+  echo "Waiting for gateway to be ready (max 5 seconds)..."
+
+  while [ $attempt -le $max_attempts ]; do
+    if curl -s -f "${GATEWAY_URL}/StatusPing" > /dev/null 2>&1; then
+      echo "Gateway is ready!"
+      return 0
+    fi
+    echo "  Attempt $attempt/$max_attempts..."
+    sleep 2
+    attempt=$((attempt + 1))
+  done
+
+  echo "ERROR: Gateway did not become ready within 5 seconds"
+  return 1
+}
+
+# Function to trigger Ignition scans
+trigger_ignition_scans() {
+  echo "Triggering Ignition resource scans..."
+
+  # Check if API key is configured
+  if [ -z "$API_KEY" ]; then
+    echo "  ⚠ No API key configured, skipping resource scans"
+    echo "    Note: Gateway will auto-detect changes, but may take longer"
+    return 0
+  fi
+
+  # Trigger config scan
+  echo "  - Scanning gateway configuration..."
+  CONFIG_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "X-Ignition-API-Token: $API_KEY" -X POST "${GATEWAY_URL}/data/api/v1/scan/config")
+  if [ "$CONFIG_HTTP_CODE" = "200" ]; then
+    echo "    ✓ Config scan triggered"
+  else
+    echo "    ✗ Config scan failed (HTTP $CONFIG_HTTP_CODE)"
+  fi
+
+  # Trigger projects scan
+  echo "  - Scanning projects..."
+  PROJECTS_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "X-Ignition-API-Token: $API_KEY" -X POST "${GATEWAY_URL}/data/api/v1/scan/projects")
+  if [ "$PROJECTS_HTTP_CODE" = "200" ]; then
+    echo "    ✓ Projects scan triggered"
+  else
+    echo "    ✗ Projects scan failed (HTTP $PROJECTS_HTTP_CODE)"
+  fi
+}
+
+# Verify gateway is running
+echo "Verifying gateway health..."
+if ! curl -s -f "${GATEWAY_URL}/StatusPing" > /dev/null 2>&1; then
+  echo ""
+  echo "✗ Project deployment FAILED - Gateway is not responding"
+  echo "  Project: $PROJECT_NAME"
+  echo "  Environment: $ENVIRONMENT ($ENV_DIR)"
+  echo "  Gateway URL: $GATEWAY_URL"
+  echo ""
+  echo "  The project files were copied but the gateway is not running."
+  echo "  Please ensure the Docker container is running: docker ps"
+  echo ""
+  exit 1
+fi
+echo "✓ Gateway is healthy"
+
+# Trigger Ignition to scan for new project
+trigger_ignition_scans
 
 echo ""
 echo "✓ Project deployed successfully!"
 echo "  Project: $PROJECT_NAME"
-echo "  Environment: $ENVIRONMENT ($ENV_DIR)"
-echo "  Location: services/$ENV_DIR/projects/$PROJECT_NAME"
-echo ""
-echo "Gateway is restarting... wait ~30 seconds then access:"
-case "$ENVIRONMENT" in
-  dev|development)
-    echo "  http://localhost:8088/web/home"
-    ;;
-  staging)
-    echo "  http://localhost:8188/web/home"
-    ;;
-  prod|production)
-    echo "  http://localhost:8288/web/home"
-    ;;
-esac
+echo "  Environment: $ENVIRONMENT"
+echo "  Location: $DEPLOY_DIR"
+echo "  Gateway URL: ${GATEWAY_URL}/web/home"
 echo ""

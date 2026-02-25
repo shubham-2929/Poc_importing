@@ -182,20 +182,36 @@ Configure these in Settings → Secrets and variables → Actions:
 - `DEV_GATEWAY_URL`: http://localhost:8088
 - `DEV_GATEWAY_USER`: admin
 - `DEV_GATEWAY_PASS`: dev-password
+- `DEV_GATEWAY_API_KEY`: API token with config/project scan access
+- `DEV_DB_URL`: postgres://ignition:<password>@localhost:5432/ignition_dev?sslmode=disable
 
 #### Staging Environment
 - `STAGING_GATEWAY_URL`: http://localhost:8188
 - `STAGING_GATEWAY_USER`: admin
 - `STAGING_GATEWAY_PASS`: staging-password
+- `STAGING_GATEWAY_API_KEY`: API token with config/project scan access
 - `STAGING_DB_URL`: postgres://ignition:ignition-db-password@localhost:5432/ignition_staging?sslmode=disable
 
 #### Production Environment
 - `PROD_GATEWAY_URL`: http://localhost:8288
 - `PROD_GATEWAY_USER`: admin
 - `PROD_GATEWAY_PASS`: prod-password
+- `PROD_GATEWAY_API_KEY`: API token with config/project scan access
 - `PROD_DB_URL`: postgres://ignition:ignition-db-password@localhost:5432/ignition_prod?sslmode=disable
 
 **Note**: Use GitHub Environments and Secrets for secure credential management.
+
+### Local Secret Handling
+
+- Do not commit passwords or API keys in `config/environments/*.yaml`.
+- Copy `.env.example` to `.env.local` and set local values.
+- Load variables before running scripts locally:
+
+```bash
+set -a
+source .env.local
+set +a
+```
 
 ### Setting Up Environments in GitHub
 

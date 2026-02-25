@@ -7,13 +7,37 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-ENVIRONMENT=$1
+ENVIRONMENT_INPUT=$1
 
-if [ -z "$ENVIRONMENT" ]; then
+if [ -z "$ENVIRONMENT_INPUT" ]; then
   echo "Error: Environment not specified"
   echo "Usage: ./scripts/smoke-test.sh <environment>"
   exit 1
 fi
+
+case "$ENVIRONMENT_INPUT" in
+  local)
+    ENVIRONMENT="local"
+    ENV_VAR_PREFIX="LOCAL"
+    ;;
+  dev|development)
+    ENVIRONMENT="dev"
+    ENV_VAR_PREFIX="DEV"
+    ;;
+  staging)
+    ENVIRONMENT="staging"
+    ENV_VAR_PREFIX="STAGING"
+    ;;
+  prod|production)
+    ENVIRONMENT="prod"
+    ENV_VAR_PREFIX="PROD"
+    ;;
+  *)
+    echo "Error: Unknown environment: $ENVIRONMENT_INPUT"
+    echo "Available environments: local, dev, staging, prod"
+    exit 1
+    ;;
+esac
 
 CONFIG_FILE="$PROJECT_ROOT/config/environments/${ENVIRONMENT}.yaml"
 
@@ -23,7 +47,20 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 # Parse configuration
-GATEWAY_URL=$(grep "url:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
+GATEWAY_URL_FROM_CONFIG=$(grep "url:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
+API_KEY_FROM_CONFIG=$(grep "api_key:" "$CONFIG_FILE" | head -1 | awk '{print $2}')
+
+GATEWAY_URL_ENV_VAR="${ENV_VAR_PREFIX}_GATEWAY_URL"
+GATEWAY_API_KEY_ENV_VAR="${ENV_VAR_PREFIX}_GATEWAY_API_KEY"
+GATEWAY_URL="$(eval echo \$${GATEWAY_URL_ENV_VAR})"
+API_KEY="$(eval echo \$${GATEWAY_API_KEY_ENV_VAR})"
+
+if [ -z "$GATEWAY_URL" ]; then
+  GATEWAY_URL="$GATEWAY_URL_FROM_CONFIG"
+fi
+if [ -z "$API_KEY" ]; then
+  API_KEY="$API_KEY_FROM_CONFIG"
+fi
 
 echo "=========================================="
 echo "Smoke Test - $ENVIRONMENT"
@@ -84,6 +121,43 @@ echo "Test 4: Database Connectivity"
 # This would require access to Ignition's system API
 # For now, we'll skip this test
 echo "  ⚠ Database test not implemented (requires gateway API access)"
+
+# Test 5: Pylib and Jar Tests via WebDev endpoint
+echo "Test 5: Pylib and Jar Tests"
+if [ -n "$API_KEY" ]; then
+  TEST_RESPONSE=$(curl -s -H "X-Ignition-API-Token: $API_KEY" "${GATEWAY_URL}/system/webdev/TestProject/api/test" 2>/dev/null)
+  TEST_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "X-Ignition-API-Token: $API_KEY" "${GATEWAY_URL}/system/webdev/TestProject/api/test")
+
+  if [ "$TEST_HTTP_CODE" = "200" ]; then
+    # Extract results from JSON and parse test output
+    RESULTS=$(echo "$TEST_RESPONSE" | sed 's/.*"results":"\(.*\)".*/\1/' | sed 's/\\n/\n/g')
+
+    # Check if any tests failed
+    if echo "$RESULTS" | grep -q "FAIL"; then
+      echo "  ✗ Some tests failed:"
+      echo "$RESULTS" | while IFS= read -r line; do
+        case "$line" in
+          "=== "*)  echo "  $line" ;;
+          "OK: "*)  echo "    ✓ ${line#OK: }" ;;
+          "FAIL: "*) echo "    ✗ ${line#FAIL: }" ;;
+        esac
+      done
+      EXIT_CODE=1
+    else
+      echo "  ✓ All tests passed"
+      echo "$RESULTS" | while IFS= read -r line; do
+        case "$line" in
+          "=== "*)  echo "  $line" ;;
+          "OK: "*)  echo "    ✓ ${line#OK: }" ;;
+        esac
+      done
+    fi
+  else
+    echo "  ⚠ Test endpoint not available (HTTP $TEST_HTTP_CODE) - TestProject may not be deployed"
+  fi
+else
+  echo "  ⚠ No API key configured, skipping test endpoint"
+fi
 
 echo ""
 if [ $EXIT_CODE -eq 0 ]; then

@@ -4,6 +4,13 @@
 
 name: Promote Release
 
+permissions:
+  contents: write
+
+concurrency:
+  group: promote-release-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
     inputs:

@@ -1,10 +1,10 @@
 ---
 # Staging Environment Configuration
 environment: staging
+deploy_root: /Users/jasperlouage/_docker/ignition-83-cicd-mustry
 gateway:
   url: http://localhost:8188
   username: admin
-  password: staging-password
   container_name: ignition-staging
   backup_path: ./backups/staging
 database:
@@ -12,7 +12,6 @@ database:
   port: 5432
   name: ignition_staging
   username: ignition
-  password: ignition-db-password
 projects:
   # List of projects to deploy (will be populated by CI/CD)
   # Format: project-name: path/to/project.zip

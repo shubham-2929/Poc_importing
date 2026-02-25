@@ -53,14 +53,18 @@ This guide will walk you through setting up the complete CI/CD pipeline in GitHu
    | `DEV_GATEWAY_URL` | `http://localhost:8088` | Development gateway URL |
    | `DEV_GATEWAY_USER` | `admin` | Development admin username |
    | `DEV_GATEWAY_PASS` | `dev-password` | Development admin password |
+   | `DEV_GATEWAY_API_KEY` | `cicd:...` | Development API token |
+   | `DEV_DB_URL` | `postgresql://ignition:ignition-db-password@localhost:5432/ignition_dev?sslmode=disable` | Development database URL |
    | `STAGING_GATEWAY_URL` | `http://localhost:8188` | Staging gateway URL |
    | `STAGING_GATEWAY_USER` | `admin` | Staging admin username |
    | `STAGING_GATEWAY_PASS` | `staging-password` | Staging admin password |
-   | `STAGING_DB_URL` | `postgresql://ignition:ignition-db-password@localhost:5432/ignition?sslmode=disable` | Staging database URL |
+   | `STAGING_GATEWAY_API_KEY` | `cicd:...` | Staging API token |
+   | `STAGING_DB_URL` | `postgresql://ignition:ignition-db-password@localhost:5432/ignition_staging?sslmode=disable` | Staging database URL |
    | `PROD_GATEWAY_URL` | `http://localhost:8288` | Production gateway URL |
    | `PROD_GATEWAY_USER` | `admin` | Production admin username |
    | `PROD_GATEWAY_PASS` | `prod-password` | Production admin password |
-   | `PROD_DB_URL` | `postgresql://ignition:ignition-db-password@localhost:5432/ignition?sslmode=disable` | Production database URL |
+   | `PROD_GATEWAY_API_KEY` | `cicd:...` | Production API token |
+   | `PROD_DB_URL` | `postgresql://ignition:ignition-db-password@localhost:5432/ignition_prod?sslmode=disable` | Production database URL |
 
    **Important**: All these values are automatically marked as secrets and will be masked in logs!
 
@@ -181,11 +185,13 @@ Once setup is complete, the workflows will automatically:
 
 ### Main CI/CD Workflow (`.github/workflows/ci-cd.yml`)
 
-This workflow has 4 jobs:
-1. **build**: Validates and packages all Ignition projects
-2. **deploy-dev**: Deploys to development (only on develop branch)
-3. **deploy-staging**: Deploys to staging (only on release/* branches)
-4. **deploy-prod**: Deploys to production (only on v* tags)
+This workflow has 6 jobs:
+1. **check-branch-policy**: Enforces `release/* -> main` pull request policy
+2. **build**: Validates and packages all Ignition projects and uploads artifacts
+3. **test-pylib**: Runs Python domain tests (`pytest`)
+4. **deploy-dev**: Deploys to development (only on `develop`)
+5. **deploy-staging**: Deploys to staging (only on `release/*`)
+6. **deploy-prod**: Deploys to production (only on `v*` tags)
 
 ### Promote Release Workflow (`.github/workflows/promote-release.yml`)
 
