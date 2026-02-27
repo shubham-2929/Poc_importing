@@ -13,7 +13,7 @@ services:
       - "9088:8088"  # HTTP port
       - "9043:8043"  # HTTPS port
       - "9060:8060"  # Gateway Network port
-      - "1883:1883"  # Gateway Network port
+      - "1883:1883"  # Mqtt
     volumes:
       # Persist full Ignition gateway data (commissioning + auth + config + projects)
       - ignition-local-data:/usr/local/bin/ignition/data
