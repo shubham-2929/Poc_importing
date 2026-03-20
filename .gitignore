@@ -22,6 +22,7 @@ backups/*/*
 # Auto-created temp resources by Ignition
 **/user-source/temp*/
 **/identity-provider/temp*/
+**/unary-resource.json
 config/gateway/resources/migration-log-*.md
 
 # Version-Controlled Gateway Configuration
