@@ -64,6 +64,7 @@ jobs:
             scripts/
             config/
             migrations/
+            projects/
 
   test-pylib:
     name: Test Python Libraries
