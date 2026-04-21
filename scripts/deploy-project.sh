@@ -124,22 +124,14 @@ if [ -f "$TAGS_SOURCE" ] && [ -n "$TAGS_ROOT" ]; then
 EOF
     echo "  unary-resource.json created!"
   fi
+
+  # Ignition ko file detect karne ka time do
+  echo "Waiting for Ignition to detect changes..."
+  sleep 15
+  echo "Tags should be loaded in Ignition now!"
+
 else
   echo "  No tags file or tags_root not configured — skipping"
-fi
-
-# Automatic tag reload — restart ki zaroorat nahi!
-echo "Reloading tags automatically..."
-RELOAD_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-  -X POST \
-  -u "admin:$GATEWAY_PASS" \
-  "${GATEWAY_URL}/data/tag/reload?provider=default")
-echo "  Tag reload: HTTP $RELOAD_CODE"
-
-if [ "$RELOAD_CODE" = "200" ]; then
-  echo "  Tags reloaded successfully — no restart needed!"
-else
-  echo "  Auto reload HTTP $RELOAD_CODE — tags will load on next restart"
 fi
 
 echo ""
