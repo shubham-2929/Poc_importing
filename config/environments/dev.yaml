@@ -1,7 +1,7 @@
 ---
 # Development Environment Configuration
 environment: dev
-deploy_root: C:/Program Files/Inductive Automation/Ignition/data
+deploy_root: C:/Program Files/Inductive Automation/Ignition/data/projects/TestProject
 gateway:
   url: http://localhost:8088
   username: admin
