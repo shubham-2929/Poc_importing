@@ -93,15 +93,39 @@ if ! curl -s -f "${GATEWAY_URL}/StatusPing" > /dev/null 2>&1; then
 fi
 echo "Gateway is healthy"
 
-# Tags deploy karo
+# Tags deploy karo — 3 URLs try karenge
 TAGS_FILE="$DEPLOY_DIR/ignition/tags/tags.json"
 if [ -f "$TAGS_FILE" ]; then
   echo "Deploying tags..."
+
+  # URL 1 try karo
   TAGS_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
     -H "X-Ignition-API-Token: $API_KEY" \
     -H "Content-Type: application/json" \
-    -X POST "${GATEWAY_URL}/data/tag/importtags?provider=default&collisionPolicy=o" \
+    -X POST "${GATEWAY_URL}/data/tag/importtags?provider=default&collisionPolicy=o&baseTagPath=" \
     --data-binary "@$TAGS_FILE")
+  echo "  URL1 result: HTTP $TAGS_HTTP_CODE"
+
+  # Agar 404 aaya toh URL 2 try karo
+  if [ "$TAGS_HTTP_CODE" = "404" ]; then
+    TAGS_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+      -H "X-Ignition-API-Token: $API_KEY" \
+      -H "Content-Type: application/json" \
+      -X POST "${GATEWAY_URL}/data/tag/import?provider=default&collisionPolicy=o" \
+      --data-binary "@$TAGS_FILE")
+    echo "  URL2 result: HTTP $TAGS_HTTP_CODE"
+  fi
+
+  # Agar abhi bhi 404 aaya toh URL 3 try karo
+  if [ "$TAGS_HTTP_CODE" = "404" ]; then
+    TAGS_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+      -H "X-Ignition-API-Token: $API_KEY" \
+      -H "Content-Type: application/json" \
+      -X POST "${GATEWAY_URL}/data/api/v1/tag/import?provider=default" \
+      --data-binary "@$TAGS_FILE")
+    echo "  URL3 result: HTTP $TAGS_HTTP_CODE"
+  fi
+
   if [ "$TAGS_HTTP_CODE" = "200" ]; then
     echo "  Tags deployed successfully"
   else
