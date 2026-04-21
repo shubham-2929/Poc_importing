@@ -25,7 +25,6 @@ jobs:
   build:
     name: Build and Validate
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -69,7 +68,6 @@ jobs:
   test-pylib:
     name: Test Python Libraries
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -107,9 +105,11 @@ jobs:
           path: .
 
       - name: Deploy to Development Gateway
-        shell: cmd
+        shell: powershell
         run: |
-          "C:\Program Files\Git\bin\bash.exe" ./scripts/deploy-project.sh dev projects/TestProject
+          $env:DEV_GATEWAY_URL = "${{ secrets.DEV_GATEWAY_URL }}"
+          $env:DEV_GATEWAY_API_KEY = "${{ secrets.DEV_GATEWAY_API_KEY }}"
+          & "C:\Program Files\Git\bin\bash.exe" -c "DEV_GATEWAY_URL='$env:DEV_GATEWAY_URL' DEV_GATEWAY_API_KEY='$env:DEV_GATEWAY_API_KEY' ./scripts/deploy-project.sh dev projects/TestProject"
         env:
           DEV_GATEWAY_URL: ${{ secrets.DEV_GATEWAY_URL }}
           DEV_GATEWAY_API_KEY: ${{ secrets.DEV_GATEWAY_API_KEY }}
