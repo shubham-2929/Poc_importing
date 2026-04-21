@@ -2,7 +2,7 @@
 # Development Environment Configuration
 environment: dev
 deploy_root: "C:/Program Files/Inductive Automation/Ignition/data/projects"
-tags_root: "C:/Program Files/Inductive Automation/Ignition/data/config/ignition/tags/default"
+tags_root: "C:/Program Files/Inductive Automation/Ignition/data/config/resources/core/ignition/tag-definition/default"
 gateway:
   url: http://localhost:8088
   username: admin
