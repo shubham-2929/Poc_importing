@@ -29,6 +29,13 @@
       "defaultValue": 6000.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
+    },
+    {
+      "valueSource": "memory",
+      "name": "vidp",
+      "defaultValue": 7000.0,
+      "tagType": "AtomicTag",
+      "dataType": "Float4"
     }
   ]
 }
