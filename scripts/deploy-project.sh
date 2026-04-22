@@ -125,10 +125,17 @@ EOF
     echo "  unary-resource.json created!"
   fi
 
-  # Ignition ko file detect karne ka time do
-  echo "Waiting for Ignition to detect changes..."
-  sleep 15
-  echo "Tags should be loaded in Ignition now!"
+  # WebDev to automatically reload  — no restart needed!
+  echo "Reloading tags via WebDev..."
+  RELOAD_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+    -X POST \
+    "${GATEWAY_URL}/system/webdev/TestProject/api/reloadtags")
+  echo "  Tag reload: HTTP $RELOAD_CODE"
+  if [ "$RELOAD_CODE" = "200" ]; then
+    echo "  Tags reloaded successfully — no restart needed!"
+  else
+    echo "  Reload failed: HTTP $RELOAD_CODE"
+  fi
 
 else
   echo "  No tags file or tags_root not configured — skipping"
@@ -140,4 +147,3 @@ echo "  Project: $PROJECT_NAME"
 echo "  Location: $DEPLOY_DIR"
 echo "  Gateway: ${GATEWAY_URL}/web/home"
 echo ""
-
