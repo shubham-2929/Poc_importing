@@ -5,21 +5,21 @@
     {
       "valueSource": "memory",
       "name": "Temperature",
-      "defaultValue": 500.0,
+      "defaultValue": 9000.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     },
     {
       "valueSource": "memory",
       "name": "Pressure",
-      "defaultValue": 400.0,
+      "defaultValue": 1200.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     },
     {
       "valueSource": "memory",
       "name": "Speed",
-      "defaultValue": 40.0,
+      "defaultValue": 700.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     },
@@ -33,7 +33,7 @@
     {
       "valueSource": "memory",
       "name": "vidp",
-      "defaultValue": 300.0,
+      "defaultValue": 6000.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     },
