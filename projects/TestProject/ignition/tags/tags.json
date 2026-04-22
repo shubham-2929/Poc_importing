@@ -5,28 +5,28 @@
     {
       "valueSource": "memory",
       "name": "Temperature",
-      "defaultValue": 160.0,
+      "defaultValue": 500.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     },
     {
       "valueSource": "memory",
       "name": "Pressure",
-      "defaultValue": 190.0,
+      "defaultValue": 400.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     },
     {
       "valueSource": "memory",
       "name": "Speed",
-      "defaultValue": 200.0,
+      "defaultValue": 300.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     },
     {
       "valueSource": "memory",
       "name": "control",
-      "defaultValue": 600.0,
+      "defaultValue": 6000.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     }
