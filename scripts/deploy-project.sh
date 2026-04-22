@@ -147,3 +147,4 @@ echo "  Project: $PROJECT_NAME"
 echo "  Location: $DEPLOY_DIR"
 echo "  Gateway: ${GATEWAY_URL}/web/home"
 echo ""
+
