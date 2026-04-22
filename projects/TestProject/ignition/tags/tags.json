@@ -36,6 +36,13 @@
       "defaultValue": 300.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
+    },
+    {
+      "valueSource": "memory",
+      "name": "htrt",
+      "defaultValue": 3900.0,
+      "tagType": "AtomicTag",
+      "dataType": "Float4"
     }
   ]
 }
