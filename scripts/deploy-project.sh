@@ -45,9 +45,10 @@ API_KEY_FROM_CONFIG=$(grep "api_key:" "$CONFIG_FILE" | head -1 | awk '{print $2}
 GATEWAY_URL="$(eval echo \$${ENV_VAR_PREFIX}_GATEWAY_URL)"
 API_KEY="$(eval    echo \$${ENV_VAR_PREFIX}_GATEWAY_API_KEY)"
 GATEWAY_PASS="$(eval echo \$${ENV_VAR_PREFIX}_GATEWAY_PASS)"
+GATEWAY_USER="$(eval echo \$${ENV_VAR_PREFIX}_GATEWAY_USER)"
 
-if [ -z "$GATEWAY_URL" ]; then GATEWAY_URL="$GATEWAY_URL_FROM_CONFIG"; fi
-if [ -z "$API_KEY" ];     then API_KEY="$API_KEY_FROM_CONFIG";         fi
+if [ -z "$GATEWAY_URL" ];  then GATEWAY_URL="$GATEWAY_URL_FROM_CONFIG"; fi
+if [ -z "$API_KEY" ];      then API_KEY="$API_KEY_FROM_CONFIG";         fi
 if [ -z "$API_KEY" ] && [ -f "$PROJECT_ROOT/secrets/gateway_api_key" ]; then
   API_KEY=$(tr -d '\r\n' < "$PROJECT_ROOT/secrets/gateway_api_key")
 fi
@@ -138,8 +139,9 @@ echo "✓ Gateway is healthy"
 echo ""
 echo "Reloading Ignition resources..."
 
-# Pehle scan API try karo (licensed Ignition ke liye)
 SCAN_SUCCESS=false
+
+# Option 1: Licensed Ignition — scan API try karo
 if [ -n "$API_KEY" ]; then
   echo "  - Trying scan API..."
 
@@ -157,21 +159,30 @@ if [ -n "$API_KEY" ]; then
     SCAN_SUCCESS=true
   else
     echo "    ⚠ Scan API failed (config: HTTP $CONFIG_CODE, projects: HTTP $PROJECTS_CODE)"
-    echo "    ⚠ Likely Trial Mode limitation — trying WebDev fallback..."
+    echo "    ⚠ Trying WebDev fallback..."
   fi
 fi
 
-# Scan fail hua ya API key nahi — WebDev fallback try karo
+# Option 2: Trial Mode — WebDev endpoint se requestScan() trigger karo
 if [ "$SCAN_SUCCESS" = false ]; then
-  echo "  - Trying WebDev reload..."
-  RELOAD_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-    -X POST \
-    "${GATEWAY_URL}/system/webdev/TestProject/api/reloadtags")
-  if [ "$RELOAD_CODE" = "200" ]; then
-    echo "    ✓ WebDev reload successful (HTTP 200)"
+  echo "  - Trying WebDev reload (GET + basic auth)..."
+
+  if [ -z "$GATEWAY_USER" ] || [ -z "$GATEWAY_PASS" ]; then
+    echo "    ⚠ GATEWAY_USER or GATEWAY_PASS not set — skipping WebDev reload"
   else
-    echo "    ⚠ WebDev reload failed (HTTP $RELOAD_CODE)"
-    echo "    ⚠ Files are copied — Ignition will auto-detect changes shortly"
+    RELOAD_CODE=$(curl -s -o /tmp/webdev_response.txt -w "%{http_code}" \
+      -u "${GATEWAY_USER}:${GATEWAY_PASS}" \
+      -X GET \
+      "${GATEWAY_URL}/system/webdev/${PROJECT_NAME}/api/reload")
+
+    if [ "$RELOAD_CODE" = "200" ]; then
+      echo "    ✓ WebDev reload successful (HTTP 200)"
+      SCAN_SUCCESS=true
+    else
+      RESPONSE_BODY=$(cat /tmp/webdev_response.txt 2>/dev/null || echo "no response")
+      echo "    ⚠ WebDev reload failed (HTTP $RELOAD_CODE): $RESPONSE_BODY"
+      echo "    ⚠ Files are copied — Ignition will auto-detect changes shortly"
+    fi
   fi
 fi
 
@@ -181,4 +192,4 @@ echo "✓ Project deployed successfully!"
 echo "  Project:  $PROJECT_NAME"
 echo "  Location: $DEPLOY_DIR"
 echo "  Gateway:  ${GATEWAY_URL}/web/home"
-echo "=============================="
+echo "=========================================="
