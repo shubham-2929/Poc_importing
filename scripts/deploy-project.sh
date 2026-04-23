@@ -94,6 +94,7 @@ cp -r "$SOURCE_DIR" "$DEPLOY_DIR"
 
 if [ "$IS_ZIP" = true ]; then rm -rf "$TEMP_DIR"; fi
 
+# ─── Tags deploy ──────────────────────────────────────────────────────────────
 TAGS_SOURCE="$DEPLOY_DIR/ignition/tags/tags.json"
 RESOURCE_SOURCE="$DEPLOY_DIR/ignition/tags/unary-resource.json"
 
@@ -124,6 +125,7 @@ else
   echo "  ℹ No tags file or tags_root not configured — skipping tags"
 fi
 
+# ─── Gateway health check ─────────────────────────────────────────────────────
 echo ""
 echo "Verifying gateway health..."
 if ! curl -s -f "${GATEWAY_URL}/StatusPing" > /dev/null 2>&1; then
@@ -132,44 +134,45 @@ if ! curl -s -f "${GATEWAY_URL}/StatusPing" > /dev/null 2>&1; then
 fi
 echo "✓ Gateway is healthy"
 
+# ─── Ignition reload ──────────────────────────────────────────────────────────
 echo ""
-echo "Triggering Ignition resource scans..."
+echo "Reloading Ignition resources..."
 
-if [ -z "$API_KEY" ]; then
-  echo "  ⚠ No API key configured — skipping scans"
-  echo "    Ignition will auto-detect changes but may take longer."
-else
-  failed=0
+# Pehle scan API try karo (licensed Ignition ke liye)
+SCAN_SUCCESS=false
+if [ -n "$API_KEY" ]; then
+  echo "  - Trying scan API..."
 
-  echo "  - Scanning gateway config..."
   CONFIG_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
     -H "X-Ignition-API-Token: $API_KEY" \
     -X POST "${GATEWAY_URL}/data/api/v1/scan/config")
-  if [ "$CONFIG_CODE" = "200" ]; then
-    echo "    ✓ Config scan triggered (HTTP 200)"
-  else
-    echo "    ✗ Config scan failed (HTTP $CONFIG_CODE)"
-    failed=1
-  fi
 
-  echo "  - Scanning projects (views, scripts, resources)..."
   PROJECTS_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
     -H "X-Ignition-API-Token: $API_KEY" \
     -X POST "${GATEWAY_URL}/data/api/v1/scan/projects")
-  if [ "$PROJECTS_CODE" = "200" ]; then
+
+  if [ "$CONFIG_CODE" = "200" ] && [ "$PROJECTS_CODE" = "200" ]; then
+    echo "    ✓ Config scan triggered (HTTP 200)"
     echo "    ✓ Projects scan triggered (HTTP 200)"
+    SCAN_SUCCESS=true
   else
-    echo "    ✗ Projects scan failed (HTTP $PROJECTS_CODE)"
-    failed=1
+    echo "    ⚠ Scan API failed (config: HTTP $CONFIG_CODE, projects: HTTP $PROJECTS_CODE)"
+    echo "    ⚠ Likely Trial Mode limitation — trying WebDev fallback..."
   fi
+fi
 
-  if [ "$failed" -ne 0 ]; then
-    echo ""
-    echo "  ERROR: One or more scans failed — deployment aborted."
-    exit 1
+# Scan fail hua ya API key nahi — WebDev fallback try karo
+if [ "$SCAN_SUCCESS" = false ]; then
+  echo "  - Trying WebDev reload..."
+  RELOAD_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+    -X POST \
+    "${GATEWAY_URL}/system/webdev/TestProject/api/reloadtags")
+  if [ "$RELOAD_CODE" = "200" ]; then
+    echo "    ✓ WebDev reload successful (HTTP 200)"
+  else
+    echo "    ⚠ WebDev reload failed (HTTP $RELOAD_CODE)"
+    echo "    ⚠ Files are copied — Ignition will auto-detect changes shortly"
   fi
-
-  echo "  ✓ All scans done — views and resources reloading in Ignition (no restart needed)"
 fi
 
 echo ""
