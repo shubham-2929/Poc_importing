@@ -1,15 +1,11 @@
 # GitHub Actions CI/CD Pipeline for Ignition 8.3
 # Development only deployment
-
 name: CI/CD Pipeline
-
 permissions:
   contents: read
-
 concurrency:
   group: ci-cd-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 on:
   push:
     branches:
@@ -17,24 +13,19 @@ on:
   pull_request:
     branches:
       - develop
-
 env:
   BUILD_CONFIGURATION: Release
-
 jobs:
   build:
     name: Build and Validate
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Validate Project Names and Structure
         run: |
           chmod +x ./scripts/validate-names.sh
           ./scripts/validate-names.sh ./projects
-
       - name: Package All Projects
         run: |
           set -e
@@ -53,7 +44,6 @@ jobs:
             done
           fi
           ls -lh build/
-
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -64,25 +54,20 @@ jobs:
             scripts/
             config/
             migrations/
-
   test-pylib:
     name: Test Python Libraries
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Run pylib tests
         run: |
           chmod +x ./scripts/test-pylib.sh
           ./scripts/test-pylib.sh pylib/Mustry/Tests
-
   deploy-dev:
     name: Deploy to Development
     runs-on: self-hosted
@@ -90,25 +75,24 @@ jobs:
     if: github.ref == 'refs/heads/develop'
     environment:
       name: development
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts-${{ github.sha }}
           path: ./artifacts
-
       - name: Deploy to Development Gateway
         shell: powershell
         run: |
           $env:DEV_GATEWAY_URL = "${{ secrets.DEV_GATEWAY_URL }}"
           $env:DEV_GATEWAY_API_KEY = "${{ secrets.DEV_GATEWAY_API_KEY }}"
           $env:DEV_GATEWAY_PASS = "${{ secrets.DEV_GATEWAY_PASS }}"
-          & "C:\Program Files\Git\bin\bash.exe" -c "DEV_GATEWAY_URL='$env:DEV_GATEWAY_URL' DEV_GATEWAY_API_KEY='$env:DEV_GATEWAY_API_KEY' DEV_GATEWAY_PASS='$env:DEV_GATEWAY_PASS' ./scripts/deploy-project.sh dev projects/TestProject"
+          $env:DEV_GATEWAY_USER = "${{ secrets.DEV_GATEWAY_USER }}"
+          & "C:\Program Files\Git\bin\bash.exe" -c "DEV_GATEWAY_URL='$env:DEV_GATEWAY_URL' DEV_GATEWAY_API_KEY='$env:DEV_GATEWAY_API_KEY' DEV_GATEWAY_PASS='$env:DEV_GATEWAY_PASS' DEV_GATEWAY_USER='$env:DEV_GATEWAY_USER' ./scripts/deploy-project.sh dev projects/TestProject"
         env:
           DEV_GATEWAY_URL: ${{ secrets.DEV_GATEWAY_URL }}
           DEV_GATEWAY_API_KEY: ${{ secrets.DEV_GATEWAY_API_KEY }}
           DEV_GATEWAY_PASS: ${{ secrets.DEV_GATEWAY_PASS }}
+          DEV_GATEWAY_USER: ${{ secrets.DEV_GATEWAY_USER }}
