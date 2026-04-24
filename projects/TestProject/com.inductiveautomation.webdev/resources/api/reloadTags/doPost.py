@@ -1,6 +1,16 @@
 def doPost(request, session):
-    try:
-        system.project.requestScan()
-        return {'json': {'status': 'ok', 'message': 'Scan triggered'}}
-    except Exception as e:
-        return {'json': {'status': 'error', 'message': str(e)}}
+  try:
+        tags_file = "C:/Program Files/Inductive Automation/Ignition/data/config/resources/core/ignition/tag-definition/default/tags.json"
+
+        tags_json = system.file.readFileAsString(tags_file)
+
+        system.tag.configure("[default]", tags_json, 0)
+
+        return {"json": {"status": "success"}}
+  except Exception as e:
+  		
+	    return {"json": {"status": "error", "message": str(e)}}
+
+        
+
+ 
