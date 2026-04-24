@@ -1,5 +1,5 @@
 {
-  "resource-type": "com.inductiveautomation.webdev",
+  "resource-type": "python-resource",
   "doGet": {
     "enabled": false,
     "max-retry-attempts": 3,
