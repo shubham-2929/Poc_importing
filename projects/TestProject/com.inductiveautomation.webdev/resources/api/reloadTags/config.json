@@ -1,7 +1,7 @@
 {
   "resource-type": "python-resource",
   "doGet": {
-    "enabled": true,
+    "enabled": false,
     "max-retry-attempts": 3,
     "require-auth": false,
     "require-https": false,
