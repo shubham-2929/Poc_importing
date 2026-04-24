@@ -4,7 +4,7 @@
   "tags": [
     {
       "valueSource": "memory",
-      "name": "Temperature",
+      "name": "Tensionbolo",
       "defaultValue": 9000.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
