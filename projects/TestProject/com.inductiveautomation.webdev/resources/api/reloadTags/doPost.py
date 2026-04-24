@@ -4,7 +4,7 @@ def doPost(request, session):
 
         tags_json = system.file.readFileAsString(tags_file)
 
-        system.tag.configure("[default]", tags_json, 0)
+        system.tag.configure("[default]", tags_json, 'o')
 
         return {"json": {"status": "success"}}
   except Exception as e:
