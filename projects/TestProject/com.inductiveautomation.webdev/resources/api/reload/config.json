@@ -1,6 +1,6 @@
 {
   "resource-type": "python-resource",
-  "doPost": {
+  "doGet": {
     "enabled": true,
     "max-retry-attempts": 3,
     "require-auth": false,
@@ -8,7 +8,7 @@
     "required-roles": "",
     "user-source": ""
   },
-  "doGet": {
+  "doPost": {
     "enabled": false,
     "max-retry-attempts": 3,
     "require-auth": false,
