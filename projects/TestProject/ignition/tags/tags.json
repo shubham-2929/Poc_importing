@@ -4,14 +4,14 @@
   "tags": [
     {
       "valueSource": "memory",
-      "name": "Tensionbolo",
+      "name": "Ignitiongithubtesting",
       "defaultValue": 9000.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     },
     {
       "valueSource": "memory",
-      "name": "Pressure",
+      "name": "mastbiryani",
       "defaultValue": 1200.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
