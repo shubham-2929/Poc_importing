@@ -83,15 +83,12 @@ echo "=========================================="
 DEPLOY_DIR="$DEPLOY_TARGET/$PROJECT_NAME"
 echo "Deploying to: $DEPLOY_DIR"
 
-mkdir -p "$(dirname "$DEPLOY_DIR")"
+mkdir -p "$DEPLOY_DIR"
 
-if [ -d "$DEPLOY_DIR" ]; then
-  echo "Removing existing project..."
-  rm -rf "$DEPLOY_DIR"
-fi
-
+# ─── Project files copy (delete nahi — sirf overwrite) ───────────────────────
 echo "Copying project files..."
-cp -r "$SOURCE_DIR" "$DEPLOY_DIR"
+cp -rf "$SOURCE_DIR/." "$DEPLOY_DIR/"
+echo "  ✓ Project files updated"
 
 if [ "$IS_ZIP" = true ]; then rm -rf "$TEMP_DIR"; fi
 
@@ -122,31 +119,6 @@ if [ -f "$TAGS_SOURCE" ] && [ -n "$TAGS_ROOT" ]; then
 EOF
     echo "  ✓ unary-resource.json created (default)"
   fi
-
-  # ─── Tags WebDev reload ───────────────────────────────────────────────────
-  echo ""
-  echo "Reloading tags via WebDev..."
-
-  if [ -z "$GATEWAY_USER" ] || [ -z "$GATEWAY_PASS" ]; then
-    echo "  ⚠ GATEWAY_USER or GATEWAY_PASS not set — skipping tags WebDev reload"
-  else
-    TAGS_RELOAD_CODE=$(curl -s -o /tmp/tags_reload_response.txt -w "%{http_code}" \
-      -u "${GATEWAY_USER}:${GATEWAY_PASS}" \
-      -X POST \
-      -H "Content-Type: application/json" \
-      --data-binary "@$TAGS_SOURCE" \
-      "${GATEWAY_URL}/system/webdev/${PROJECT_NAME}/api/reloadTags")
-
-    if [ "$TAGS_RELOAD_CODE" = "200" ]; then
-      echo "  ✓ Tags reloaded successfully via WebDev (HTTP 200)"
-    else
-      TAGS_RESPONSE_BODY=$(cat /tmp/tags_reload_response.txt 2>/dev/null || echo "no response")
-      echo "  ⚠ Tags WebDev reload failed (HTTP $TAGS_RELOAD_CODE): $TAGS_RESPONSE_BODY"
-      echo "  ⚠ tags.json is copied — Ignition will auto-detect changes shortly"
-    fi
-  fi
-  # ─────────────────────────────────────────────────────────────────────────
-
 else
   echo "  ℹ No tags file or tags_root not configured — skipping tags"
 fi
@@ -188,7 +160,7 @@ if [ -n "$API_KEY" ]; then
   fi
 fi
 
-# Option 2: Trial Mode — WebDev endpoint se requestScan() trigger karo
+# Option 2: Trial Mode — WebDev reload + tags configure
 if [ "$SCAN_SUCCESS" = false ]; then
   echo "  - Trying WebDev reload (GET + basic auth)..."
 
