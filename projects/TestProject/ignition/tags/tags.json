@@ -5,7 +5,7 @@
     {
       "valueSource": "memory",
       "name": "mahajan",
-      "defaultValue": 9000.0,
+      "defaultValue": 90000.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     },
