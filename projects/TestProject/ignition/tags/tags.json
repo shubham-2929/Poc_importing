@@ -19,14 +19,14 @@
     {
       "valueSource": "memory",
       "name": "Speed",
-      "defaultValue": 700.0,
+      "defaultValue": 5040.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     },
     {
       "valueSource": "memory",
       "name": "control",
-      "defaultValue": 50.0,
+      "defaultValue": 5060.0,
       "tagType": "AtomicTag",
       "dataType": "Float4"
     },
