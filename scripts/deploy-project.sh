@@ -119,6 +119,29 @@ if [ -f "$TAGS_SOURCE" ] && [ -n "$TAGS_ROOT" ]; then
 EOF
     echo "  ✓ unary-resource.json created (default)"
   fi
+
+  # ─── Tags WebDev reload ───────────────────────────────────────────────────
+  echo ""
+  echo "Reloading tags via WebDev..."
+
+  if [ -z "$GATEWAY_USER" ] || [ -z "$GATEWAY_PASS" ]; then
+    echo "  ⚠ GATEWAY_USER or GATEWAY_PASS not set — skipping tags WebDev reload"
+  else
+    TAGS_RELOAD_CODE=$(curl -s -o /tmp/tags_reload_response.txt -w "%{http_code}" \
+      -u "${GATEWAY_USER}:${GATEWAY_PASS}" \
+      -X GET \
+      "${GATEWAY_URL}/system/webdev/${PROJECT_NAME}/api/reloadTags")
+
+    if [ "$TAGS_RELOAD_CODE" = "200" ]; then
+      echo "  ✓ Tags reloaded successfully via WebDev (HTTP 200)"
+    else
+      TAGS_RESPONSE_BODY=$(cat /tmp/tags_reload_response.txt 2>/dev/null || echo "no response")
+      echo "  ⚠ Tags WebDev reload failed (HTTP $TAGS_RELOAD_CODE): $TAGS_RESPONSE_BODY"
+      echo "  ⚠ tags.json is copied — Ignition will auto-detect changes shortly"
+    fi
+  fi
+  # ─────────────────────────────────────────────────────────────────────────
+
 else
   echo "  ℹ No tags file or tags_root not configured — skipping tags"
 fi
@@ -160,7 +183,7 @@ if [ -n "$API_KEY" ]; then
   fi
 fi
 
-# Option 2: Trial Mode — WebDev reload + tags configure
+# Option 2: Trial Mode — WebDev reload
 if [ "$SCAN_SUCCESS" = false ]; then
   echo "  - Trying WebDev reload (GET + basic auth)..."
 
