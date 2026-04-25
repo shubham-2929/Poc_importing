@@ -12,7 +12,7 @@ def doGet(request, session):
             tags_to_configure = tags_data
         
         for tag in tags_to_configure:
-            system.tag.configure("[default]", json.dumps(tag), 'o')
+            system.tag.configure("[default]", json.dumps(tag), 'm')
         
         return {"json": {
             "status": "success",
