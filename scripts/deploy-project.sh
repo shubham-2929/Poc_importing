@@ -85,7 +85,6 @@ echo "Deploying to: $DEPLOY_DIR"
 
 mkdir -p "$DEPLOY_DIR"
 
-# ─── Project files copy (delete nahi — sirf overwrite) ───────────────────────
 echo "Copying project files..."
 cp -rf "$SOURCE_DIR/." "$DEPLOY_DIR/"
 echo "  ✓ Project files updated"
@@ -120,24 +119,45 @@ EOF
     echo "  ✓ unary-resource.json created (default)"
   fi
 
-  # ─── Tags WebDev reload ───────────────────────────────────────────────────
+  # ─── Tags reload: pehle scan API, phir WebDev fallback ───────────────────
   echo ""
-  echo "Reloading tags via WebDev..."
+  echo "Reloading tags..."
+  TAGS_RELOAD_SUCCESS=false
 
-  if [ -z "$GATEWAY_USER" ] || [ -z "$GATEWAY_PASS" ]; then
-    echo "  ⚠ GATEWAY_USER or GATEWAY_PASS not set — skipping tags WebDev reload"
-  else
-    TAGS_RELOAD_CODE=$(curl -s -o /tmp/tags_reload_response.txt -w "%{http_code}" \
-      -u "${GATEWAY_USER}:${GATEWAY_PASS}" \
-      -X GET \
-      "${GATEWAY_URL}/system/webdev/${PROJECT_NAME}/api/reloadTags")
+  # Option 1: Scan API
+  if [ -n "$API_KEY" ]; then
+    echo "  - Trying scan API..."
+    TAGS_SCAN_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+      -H "X-Ignition-API-Token: $API_KEY" \
+      -X POST "${GATEWAY_URL}/data/api/v1/scan/config")
 
-    if [ "$TAGS_RELOAD_CODE" = "200" ]; then
-      echo "  ✓ Tags reloaded successfully via WebDev (HTTP 200)"
+    if [ "$TAGS_SCAN_CODE" = "200" ]; then
+      echo "  ✓ Tags reloaded via scan API (HTTP 200)"
+      TAGS_RELOAD_SUCCESS=true
     else
-      TAGS_RESPONSE_BODY=$(cat /tmp/tags_reload_response.txt 2>/dev/null || echo "no response")
-      echo "  ⚠ Tags WebDev reload failed (HTTP $TAGS_RELOAD_CODE): $TAGS_RESPONSE_BODY"
-      echo "  ⚠ tags.json is copied — Ignition will auto-detect changes shortly"
+      echo "  ⚠ Scan API failed (HTTP $TAGS_SCAN_CODE) — trying WebDev fallback..."
+    fi
+  fi
+
+  # Option 2: WebDev fallback
+  if [ "$TAGS_RELOAD_SUCCESS" = false ]; then
+    echo "  - Trying WebDev reload..."
+    if [ -z "$GATEWAY_USER" ] || [ -z "$GATEWAY_PASS" ]; then
+      echo "  ⚠ GATEWAY_USER or GATEWAY_PASS not set — skipping WebDev reload"
+    else
+      TAGS_RELOAD_CODE=$(curl -s -o /tmp/tags_reload_response.txt -w "%{http_code}" \
+        -u "${GATEWAY_USER}:${GATEWAY_PASS}" \
+        -X GET \
+        "${GATEWAY_URL}/system/webdev/${PROJECT_NAME}/api/reloadTags")
+
+      if [ "$TAGS_RELOAD_CODE" = "200" ]; then
+        echo "  ✓ Tags reloaded via WebDev (HTTP 200)"
+        TAGS_RELOAD_SUCCESS=true
+      else
+        TAGS_RESPONSE_BODY=$(cat /tmp/tags_reload_response.txt 2>/dev/null || echo "no response")
+        echo "  ⚠ WebDev reload failed (HTTP $TAGS_RELOAD_CODE): $TAGS_RESPONSE_BODY"
+        echo "  ⚠ tags.json copied — Ignition will auto-detect changes shortly"
+      fi
     fi
   fi
   # ─────────────────────────────────────────────────────────────────────────
@@ -158,10 +178,9 @@ echo "✓ Gateway is healthy"
 # ─── Ignition reload ──────────────────────────────────────────────────────────
 echo ""
 echo "Reloading Ignition resources..."
-
 SCAN_SUCCESS=false
 
-# Option 1: Licensed Ignition — scan API try karo
+# Option 1: Scan API
 if [ -n "$API_KEY" ]; then
   echo "  - Trying scan API..."
 
@@ -183,10 +202,9 @@ if [ -n "$API_KEY" ]; then
   fi
 fi
 
-# Option 2: Trial Mode — WebDev reload
+# Option 2: WebDev fallback
 if [ "$SCAN_SUCCESS" = false ]; then
-  echo "  - Trying WebDev reload (GET + basic auth)..."
-
+  echo "  - Trying WebDev reload..."
   if [ -z "$GATEWAY_USER" ] || [ -z "$GATEWAY_PASS" ]; then
     echo "    ⚠ GATEWAY_USER or GATEWAY_PASS not set — skipping WebDev reload"
   else
